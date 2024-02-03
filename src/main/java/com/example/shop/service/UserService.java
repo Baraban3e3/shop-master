@@ -1,21 +1,26 @@
 package com.example.shop.service;
 
-import com.example.shop.model.User;
+import com.example.shop.domein.DTO.UserDTO;
+import com.example.shop.domein.model.User;
+import com.example.shop.mapper.UserMapper;
 import com.example.shop.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+@RequiredArgsConstructor
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
 
-    @Autowired
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final UserMapper mapperr;
 
     public void registerUser(User user) {
          userRepository.save(user);
+    }
+
+    public UserDTO getUserByUsername(String username){
+        User user = userRepository.getUserByUsername(username);
+        return mapperr.mapUserToDTO(user);
     }
 }

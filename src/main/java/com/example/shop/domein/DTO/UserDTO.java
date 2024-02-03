@@ -1,4 +1,4 @@
-package com.example.shop.DTO;
+package com.example.shop.domein.DTO;
 
 import lombok.Data;
 import javax.validation.constraints.NotBlank;

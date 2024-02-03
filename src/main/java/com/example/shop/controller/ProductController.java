@@ -1,12 +1,16 @@
 package com.example.shop.controller;
 
-import com.example.shop.DTO.ProductDTO;
-import com.example.shop.model.Product;
+import com.example.shop.domein.DTO.ProductDTO;
+import com.example.shop.domein.model.Product;
+import com.example.shop.domein.model.User;
+import com.example.shop.mapper.ProductMapper;
 import com.example.shop.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import java.util.stream.Collectors;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/products")
@@ -14,30 +18,33 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductMapper mapper;
+
+    @PostMapping
+    public void addProduct(@RequestBody ProductDTO productDTO) {
+        Product product = mapper.mapDTOToProduct(productDTO);
+        productService.createProduct(product);
+    }
 
     @GetMapping
     public List<ProductDTO> getAllProducts() {
         List<Product> products = productService.getAllProducts();
-        return mapProductsToDTOs(products);
+        return products.stream()
+                .map(mapper::mapProductToDTO)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{productId}")
     public ProductDTO getProductById(@PathVariable Long productId) {
         Product product = productService.getProductById(productId);
-        return mapProductToDTO(product);
-    }
-
-    @PostMapping
-    public void addProduct(@RequestBody ProductDTO productDTO) {
-        Product product = mapDTOToProduct(productDTO);
-        productService.createProduct(product);
+        return mapper.mapProductToDTO(product);
     }
 
     @PutMapping("/{productId}")
     public void updateProduct(@PathVariable Long productId, @RequestBody ProductDTO updatedProductDTO) {
         Product existingProduct = productService.getProductById(productId);
         if (existingProduct != null) {
-            Product updatedProduct = mapDTOToProduct(updatedProductDTO);
+            Product updatedProduct = mapper.mapDTOToProduct(updatedProductDTO);
             productService.updateProduct(productId, updatedProduct);
         }
     }
@@ -47,27 +54,8 @@ public class ProductController {
         productService.deleteProduct(productId);
     }
 
-    private List<ProductDTO> mapProductsToDTOs(List<Product> products) {
-        return products.stream()
-                .map(this::mapProductToDTO)
-                .collect(Collectors.toList());
-    }
-
-    private ProductDTO mapProductToDTO(Product product) {
-        ProductDTO productDTO = new ProductDTO();
-        productDTO.setName(product.getName());
-        productDTO.setDescription(product.getDescription());
-        productDTO.setPrice(product.getPrice());
-        productDTO.setQuantity(product.getQuantity());
-        return productDTO;
-    }
-
-    private Product mapDTOToProduct(ProductDTO productDTO) {
-        Product product = new Product();
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setPrice(productDTO.getPrice());
-        product.setQuantity(productDTO.getQuantity());
-        return product;
+    @PostMapping("{productId}/order")
+    public void orderProduct(@PathVariable Long productId, @RequestParam int quantity, @AuthenticationPrincipal User user) {
+        productService.orderProduct(productId, quantity, user);
     }
 }
